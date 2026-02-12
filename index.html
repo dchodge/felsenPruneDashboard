@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phylogenetic Tree - Pruning Algorithm</title>
+    <script src="https://unpkg.com/phylocanvas@2.8.1/dist/phylocanvas.js"></script>
+    <style>
+        body {
+            font-family: 'Avenir', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #fff1e5;
+        }
+        
+        h1 {
+            color: #000;
+            text-align: center;
+            font-weight: 400;
+            font-size: 32px;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 0;
+            box-shadow: none;
+            border: 1px solid #000;
+        }
+        
+        .controls {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #000;
+            border-radius: 0;
+            display: flex;
+            gap: 30px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            border-top: 3px solid #000;
+            border-bottom: 3px solid #000;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            font-weight: 400;
+            color: #fff;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .control-group input {
+            padding: 8px 12px;
+            border: 1px solid #fff;
+            border-radius: 0;
+            font-size: 14px;
+            width: 150px;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button {
+            padding: 12px 35px;
+            font-size: 14px;
+            font-weight: 400;
+            border: 2px solid #fff;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Avenir', 'Avenir Next', -apple-system, sans-serif;
+        }
+        
+        button:hover:not(:disabled) {
+            background-color: #fff;
+            color: #000;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .sequences {
+            margin-bottom: 40px;
+        }
+        
+        .sequence-container {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .sequence-label {
+            font-weight: 400;
+            margin-bottom: 10px;
+            color: #000;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .sequence {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 20px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .nucleotide {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
+            font-size: 15px;
+            transition: all 0.3s;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        
+        .nucleotide.A {
+            background-color: #4A90E2;
+        }
+        
+        .nucleotide.T {
+            background-color: #7EC8E3;
+        }
+        
+        .nucleotide.C {
+            background-color: #F5A623;
+        }
+        
+        .nucleotide.G {
+            background-color: #E67E22;
+        }
+        
+        .tree-container {
+            margin: 40px 0;
+            padding: 30px;
+            background: #f8f8f8;
+            border: 1px solid #000;
+            min-height: 400px;
+        }
+        
+        .tree-title {
+            font-weight: 400;
+            margin-bottom: 20px;
+            color: #000;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .phylo-tree {
+            width: 100%;
+            height: 500px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1px;
+            margin-top: 40px;
+            background: #000;
+            border: 1px solid #000;
+        }
+        
+        .stat-box {
+            background: #fff;
+            color: #000;
+            padding: 25px;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 400;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: transparent;
+            border-radius: 0;
+            flex-wrap: wrap;
+            border-top: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #000;
+        }
+        
+        .legend-color {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            display: none;
+        }
+        
+        .progress-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+        
+        .progress-text {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .likelihood-viz {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .site-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+        }
+        
+        .site-controls button {
+            padding: 8px 20px;
+            font-size: 12px;
+        }
+        
+        .site-controls input[type="range"] {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .site-info {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            min-width: 120px;
+        }
+        
+        .likelihood-key {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            font-size: 11px;
+        }
+        
+        .likelihood-key-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .likelihood-swatch {
+            width: 30px;
+            height: 20px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Phylogenetic Tree Builder</h1>
+    <p class="subtitle">Using Felsenstein's Maximum Likelihood Algorithm</p>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label for="sequenceLength">Sequence Length</label>
+                <input type="number" id="sequenceLength" min="5" max="100" value="20">
+            </div>
+            <div class="control-group">
+                <label for="numSequences">Number of Sequences (n)</label>
+                <input type="number" id="numSequences" min="3" max="10" value="5">
+            </div>
+            <div class="control-group">
+                <label for="mutationParam">Mutation Parameter (m)</label>
+                <input type="number" id="mutationParam" min="0" max="1" step="0.1" value="0.3">
+            </div>
+            <button id="generateBtn">Generate Sequences</button>
+            <div class="control-group">
+                <label for="fastaFile">Or Load FASTA File</label>
+                <input type="file" id="fastaFile" accept=".fasta,.fa,.txt" style="background: white; color: black; padding: 8px;">
+            </div>
+            <button id="downloadExample">Download Example FASTA</button>
+            <button id="buildTreeBtn" disabled>Build Tree</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4A90E2;"></div>
+                <span>Adenine (A)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #7EC8E3;"></div>
+                <span>Thymine (T)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #F5A623;"></div>
+                <span>Cytosine (C)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #E67E22;"></div>
+                <span>Guanine (G)</span>
+            </div>
+        </div>
+        
+        <div class="sequences" id="sequencesContainer"></div>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-label">Building Tree...</div>
+            <div class="progress-text" id="progressText"></div>
+        </div>
+        
+        <div class="tree-container" id="treeContainer2" style="display: none;">
+            <div class="tree-title">Maximum Likelihood (Felsenstein's Pruning)</div>
+            <div id="phylotree2" class="phylo-tree"></div>
+        </div>
+        
+        <div class="tree-container" id="likelihoodLogContainer" style="display: none;">
+            <div class="tree-title">Likelihood Calculation - Visual Process</div>
+            <div class="site-controls">
+                <button id="prevSite">← Prev Site</button>
+                <div class="site-info">
+                    <span>Site: </span><span id="currentSite">1</span><span> / </span><span id="totalSites">20</span>
+                </div>
+                <input type="range" id="siteSlider" min="0" max="19" value="0" step="1">
+                <button id="nextSite">Next Site →</button>
+                <button id="autoPlay">Auto Play</button>
+            </div>
+            <div class="likelihood-viz">
+                <canvas id="likelihoodCanvas" style="width: 100%; height: 500px;"></canvas>
+            </div>
+            <div class="likelihood-key">
+                <div class="likelihood-key-item">
+                    <div class="likelihood-swatch" style="background: #4A90E2;"></div>
+                    <span>Adenine (A)</span>
+                </div>
+                <div class="likelihood-key-item">
+                    <div class="likelihood-swatch" style="background: #7EC8E3;"></div>
+                    <span>Thymine (T)</span>
+                </div>
+                <div class="likelihood-key-item">
+                    <div class="likelihood-swatch" style="background: #F5A623;"></div>
+                    <span>Cytosine (C)</span>
+                </div>
+                <div class="likelihood-key-item">
+                    <div class="likelihood-swatch" style="background: #E67E22;"></div>
+                    <span>Guanine (G)</span>
+                </div>
+                <div style="margin-left: auto; font-family: 'Courier New', monospace;">
+                    <strong>Current Site Log L: </strong><span id="currentSiteLogL">-</span>
+                </div>
+            </div>
+            <div id="likelihoodLog" style="max-height: 300px; overflow-y: auto; padding: 20px; background: white; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.6; border: 1px solid #ddd; margin-top: 15px;"></div>
+        </div>
+        
+        <div class="stats" id="statsContainer" style="display: none;">
+            <div class="stat-box">
+                <div class="stat-label">Log Likelihood</div>
+                <div class="stat-value" id="likelihood">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Computation Time (ms)</div>
+                <div class="stat-value" id="pruningTime">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Brute Force Estimate</div>
+                <div class="stat-value" id="bruteForceTime">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Possible Trees</div>
+                <div class="stat-value" id="numTrees">-</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let sequences = [];
+        const nucleotides = ['A', 'T', 'C', 'G'];
+        
+        const generateBtn = document.getElementById('generateBtn');
+        const buildTreeBtn = document.getElementById('buildTreeBtn');
+        const sequencesContainer = document.getElementById('sequencesContainer');
+        const treeContainer = document.getElementById('treeContainer2');
+        const progressContainer = document.getElementById('progressContainer');
+        const statsContainer = document.getElementById('statsContainer');
+        const fastaFileInput = document.getElementById('fastaFile');
+        const downloadExampleBtn = document.getElementById('downloadExample');
+        
+        // Download example FASTA file
+        downloadExampleBtn.addEventListener('click', () => {
+            const fastaContent = `>Seq1
+ATGCTAGCTAGCTAGCTAGT
+>Seq2
+CGGATCGCTGACGTAGCTAT
+>Seq3
+TACGGTACGTACGGTACGGT
+>Seq4
+GCTAGCTGATCGACTGATCG
+>Seq5
+ATCGATCGATCGATCGATCG
+>Seq6
+TGCATGCATGCATGCATGCA
+>Seq7
+CGTACGTACGTACGTACGTA
+>Seq8
+GATCGATCGATCGATCGATC
+>Seq9
+ACGTACGTACGTACGTACGT
+>Seq10
+TAGCTAGCTAGCTAGCTAGC
+`;
+            const blob = new Blob([fastaContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'example.fasta';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        
+        // Parse FASTA file
+        function parseFasta(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            const sequences = [];
+            let currentSeq = null;
+            
+            for (const line of lines) {
+                if (line.startsWith('>')) {
+                    if (currentSeq) {
+                        sequences.push(currentSeq);
+                    }
+                    currentSeq = [];
+                } else {
+                    const nucs = line.trim().toUpperCase().split('');
+                    // Validate nucleotides
+                    const validNucs = nucs.filter(n => ['A', 'T', 'C', 'G'].includes(n));
+                    currentSeq.push(...validNucs);
+                }
+            }
+            if (currentSeq && currentSeq.length > 0) {
+                sequences.push(currentSeq);
+            }
+            return sequences;
+        }
+        
+        // Load FASTA file
+        fastaFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsedSequences = parseFasta(event.target.result);
+                    
+                    if (parsedSequences.length === 0) {
+                        alert('No valid sequences found in FASTA file');
+                        fastaFileInput.value = '';
+                        return;
+                    }
+                    
+                    // Check maximum number of sequences
+                    if (parsedSequences.length > 20) {
+                        alert(`Too many sequences! Maximum 20 sequences allowed. Your file has ${parsedSequences.length} sequences.`);
+                        fastaFileInput.value = '';
+                        return;
+                    }
+                    
+                    // Check maximum sequence length
+                    const maxLength = Math.max(...parsedSequences.map(s => s.length));
+                    if (maxLength > 200) {
+                        alert(`Sequences too long! Maximum 200 nucleotides allowed. Your longest sequence has ${maxLength} nucleotides.`);
+                        fastaFileInput.value = '';
+                        return;
+                    }
+                    
+                    // Check if all sequences have the same length
+                    const lengths = parsedSequences.map(s => s.length);
+                    const allSameLength = lengths.every(l => l === lengths[0]);
+                    
+                    if (!allSameLength) {
+                        alert('All sequences must have the same length. Found lengths: ' + lengths.join(', '));
+                        fastaFileInput.value = '';
+                        return;
+                    }
+                    
+                    sequences = parsedSequences;
+                    displaySequences(sequences);
+                    buildTreeBtn.disabled = false;
+                    
+                    // Clear previous results
+                    treeContainer.style.display = 'none';
+                    statsContainer.style.display = 'none';
+                    progressContainer.style.display = 'none';
+                } catch (error) {
+                    alert('Error parsing FASTA file: ' + error.message);
+                    fastaFileInput.value = '';
+                }
+            };
+            reader.readAsText(file);
+        });
+        
+        // Display sequences helper function
+        function displaySequences(seqs) {
+            sequencesContainer.innerHTML = '';
+            seqs.forEach((seq, idx) => {
+                const container = document.createElement('div');
+                container.className = 'sequence-container';
+                
+                const label = document.createElement('div');
+                label.className = 'sequence-label';
+                label.textContent = `Sequence ${idx + 1}`;
+                
+                const seqDiv = document.createElement('div');
+                seqDiv.className = 'sequence';
+                
+                seq.forEach(nuc => {
+                    const nucDiv = document.createElement('div');
+                    nucDiv.className = `nucleotide ${nuc}`;
+                    nucDiv.textContent = nuc;
+                    seqDiv.appendChild(nucDiv);
+                });
+                
+                container.appendChild(label);
+                container.appendChild(seqDiv);
+                sequencesContainer.appendChild(container);
+            });
+        }
+        
+        // Generate random sequences
+        generateBtn.addEventListener('click', () => {
+            const length = parseInt(document.getElementById('sequenceLength').value);
+            const numSeq = parseInt(document.getElementById('numSequences').value);
+            const mutationParam = parseFloat(document.getElementById('mutationParam').value);
+            
+            sequences = [];
+            treeContainer.style.display = 'none';
+            statsContainer.style.display = 'none';
+            progressContainer.style.display = 'none';
+            
+            // Generate base sequence
+            const baseSequence = Array(length).fill(0).map(() => 
+                nucleotides[Math.floor(Math.random() * 4)]
+            );
+            
+            sequences.push(baseSequence);
+            
+            // Generate mutated sequences
+            for (let i = 1; i < numSeq; i++) {
+                const newSeq = baseSequence.map(nuc => {
+                    if (Math.random() < mutationParam) {
+                        // Mutate
+                        const otherNucs = nucleotides.filter(n => n !== nuc);
+                        return otherNucs[Math.floor(Math.random() * otherNucs.length)];
+                    }
+                    return nuc;
+                });
+                sequences.push(newSeq);
+            }
+            
+            // Display sequences
+            displaySequences(sequences);
+            buildTreeBtn.disabled = false;
+        });
+        
+        // Build tree using pruning algorithm
+        buildTreeBtn.addEventListener('click', () => {
+            progressContainer.style.display = 'block';
+            document.getElementById('progressText').textContent = 'Calculating phylogenetic trees...';
+            
+            setTimeout(() => {
+                const startTime = performance.now();
+                
+                // Build likelihood tree (Felsenstein)
+                const likelihoodResult = buildTreeWithLikelihood(sequences);
+                
+                const endTime = performance.now();
+                const pruningTimeMs = (endTime - startTime).toFixed(2);
+                
+                // Calculate brute force estimate
+                const n = sequences.length;
+                const numPossibleTrees = calculateNumUnrootedTrees(n);
+                const bruteForceEstimate = estimateBruteForceTime(numPossibleTrees, sequences[0].length);
+                
+                // Display likelihood tree
+                displayTree(likelihoodResult.tree, sequences, 'phylotree2');
+                
+                // Update statistics
+                document.getElementById('likelihood').textContent = likelihoodResult.logLikelihood.toFixed(2);
+                document.getElementById('pruningTime').textContent = pruningTimeMs;
+                document.getElementById('bruteForceTime').textContent = bruteForceEstimate;
+                document.getElementById('numTrees').textContent = numPossibleTrees.toLocaleString();
+                
+                // Show results
+                document.getElementById('treeContainer2').style.display = 'block';
+                statsContainer.style.display = 'grid';
+                progressContainer.style.display = 'none';
+            }, 100);
+        });
+        
+        // Calculate number of unrooted binary trees for n taxa
+        function calculateNumUnrootedTrees(n) {
+            if (n < 3) return 0;
+            let result = 1;
+            for (let i = 3; i <= n; i++) {
+                result *= (2 * i - 5);
+            }
+            return result;
+        }
+        
+        // Estimate brute force time
+        function estimateBruteForceTime(numTrees, seqLength) {
+            // Assume each tree evaluation takes about 0.1ms per site
+            const timePerTree = seqLength * 0.1; // milliseconds
+            const totalTimeMs = numTrees * timePerTree;
+            
+            if (totalTimeMs < 1000) {
+                return totalTimeMs.toFixed(2) + ' ms';
+            } else if (totalTimeMs < 60000) {
+                return (totalTimeMs / 1000).toFixed(2) + ' sec';
+            } else if (totalTimeMs < 3600000) {
+                return (totalTimeMs / 60000).toFixed(2) + ' min';
+            } else if (totalTimeMs < 86400000) {
+                return (totalTimeMs / 3600000).toFixed(2) + ' hrs';
+            } else if (totalTimeMs < 31536000000) {
+                return (totalTimeMs / 86400000).toFixed(2) + ' days';
+            } else {
+                return (totalTimeMs / 31536000000).toFixed(2) + ' years';
+            }
+        }
+        
+        // Simple tree structure
+        class TreeNode {
+            constructor(name = null) {
+                this.name = name;
+                this.children = [];
+                this.parent = null;
+                this.states = new Set();
+            }
+            
+            isLeaf() {
+                return this.children.length === 0;
+            }
+        }
+        
+        // Build a simple star tree for visualization
+        function buildSimpleTree(sequences) {
+            const root = new TreeNode('root');
+            sequences.forEach((seq, idx) => {
+                const leaf = new TreeNode(`Seq${idx + 1}`);
+                leaf.parent = root;
+                root.children.push(leaf);
+            });
+            return root;
+        }
+        
+        // Build tree using UPGMA-like approach with Fitch's algorithm
+        function buildTreeWithPruning(sequences) {
+            const n = sequences.length;
+            
+            // Create distance matrix
+            const distMatrix = Array(n).fill(0).map(() => Array(n).fill(0));
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    const dist = hammingDistance(sequences[i], sequences[j]);
+                    distMatrix[i][j] = dist;
+                    distMatrix[j][i] = dist;
+                }
+            }
+            
+            // Build tree using UPGMA
+            const nodes = sequences.map((seq, idx) => {
+                const node = new TreeNode(`Seq${idx + 1}`);
+                node.sequenceIndex = idx;
+                return node;
+            });
+            
+            const activeNodes = [...nodes];
+            
+            while (activeNodes.length > 1) {
+                // Find minimum distance
+                let minDist = Infinity;
+                let minI = 0, minJ = 1;
+                
+                for (let i = 0; i < activeNodes.length; i++) {
+                    for (let j = i + 1; j < activeNodes.length; j++) {
+                        const iIndices = getLeafIndices(activeNodes[i]);
+                        const jIndices = getLeafIndices(activeNodes[j]);
+                        
+                        let avgDist = 0;
+                        for (const ii of iIndices) {
+                            for (const jj of jIndices) {
+                                avgDist += distMatrix[ii][jj];
+                            }
+                        }
+                        avgDist /= (iIndices.length * jIndices.length);
+                        
+                        if (avgDist < minDist) {
+                            minDist = avgDist;
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+                
+                // Merge closest nodes
+                const newNode = new TreeNode();
+                newNode.children = [activeNodes[minI], activeNodes[minJ]];
+                activeNodes[minI].parent = newNode;
+                activeNodes[minJ].parent = newNode;
+                
+                // Remove merged nodes and add new node
+                const newActiveNodes = activeNodes.filter((_, idx) => idx !== minI && idx !== minJ);
+                newActiveNodes.push(newNode);
+                activeNodes.length = 0;
+                activeNodes.push(...newActiveNodes);
+            }
+            
+            const tree = activeNodes[0];
+            tree.branchLength = 0; // Root has no branch length
+            
+            // Calculate parsimony score and reconstruct ancestral sequences
+            let totalScore = 0;
+            const seqLength = sequences[0].length;
+            
+            // Initialize sequence arrays for all nodes
+            function initSequences(node) {
+                node.sequence = [];
+                if (!node.isLeaf()) {
+                    node.children.forEach(initSequences);
+                }
+            }
+            initSequences(tree);
+            
+            for (let site = 0; site < seqLength; site++) {
+                totalScore += fitchAlgorithmWithReconstruction(tree, sequences, site);
+            }
+            
+            return { tree, score: totalScore };
+        }
+        
+        function getLeafIndices(node) {
+            if (node.sequenceIndex !== undefined) {
+                return [node.sequenceIndex];
+            }
+            const indices = [];
+            for (const child of node.children) {
+                indices.push(...getLeafIndices(child));
+            }
+            return indices;
+        }
+        
+        function hammingDistance(seq1, seq2) {
+            let dist = 0;
+            for (let i = 0; i < seq1.length; i++) {
+                if (seq1[i] !== seq2[i]) dist++;
+            }
+            return dist;
+        }
+        
+        // Fitch's algorithm for a single site with sequence reconstruction
+        function fitchAlgorithmWithReconstruction(tree, sequences, site) {
+            // Post-order traversal (bottom-up)
+            function postOrder(node) {
+                if (node.isLeaf()) {
+                    const seqIdx = node.sequenceIndex;
+                    node.states = new Set([sequences[seqIdx][site]]);
+                } else {
+                    for (const child of node.children) {
+                        postOrder(child);
+                    }
+                    
+                    // Intersection of children's states
+                    const childStates = node.children.map(c => c.states);
+                    const intersection = new Set(
+                        [...childStates[0]].filter(x => childStates.every(s => s.has(x)))
+                    );
+                    
+                    if (intersection.size > 0) {
+                        node.states = intersection;
+                    } else {
+                        // Union if no intersection
+                        node.states = new Set();
+                        for (const states of childStates) {
+                            for (const state of states) {
+                                node.states.add(state);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            postOrder(tree);
+            
+            // Count mutations and assign states (pre-order traversal)
+            let mutations = 0;
+            
+            function preOrder(node, parentState = null) {
+                let nodeState;
+                
+                if (parentState && node.states.has(parentState)) {
+                    nodeState = parentState;
+                } else {
+                    nodeState = [...node.states][0];
+                    if (parentState) mutations++;
+                }
+                
+                // Store the reconstructed state for this site
+                if (!node.isLeaf()) {
+                    node.sequence[site] = nodeState;
+                }
+                
+                for (const child of node.children) {
+                    preOrder(child, nodeState);
+                }
+            }
+            
+            preOrder(tree);
+            
+            return mutations;
+        }
+        
+        // Build tree using maximum likelihood with Felsenstein's pruning
+        function buildTreeWithLikelihood(sequences) {
+            const n = sequences.length;
+            
+            // Create distance matrix (same as parsimony)
+            const distMatrix = Array(n).fill(0).map(() => Array(n).fill(0));
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    const dist = hammingDistance(sequences[i], sequences[j]);
+                    distMatrix[i][j] = dist;
+                    distMatrix[j][i] = dist;
+                }
+            }
+            
+            // Build tree using UPGMA
+            const nodes = sequences.map((seq, idx) => {
+                const node = new TreeNode(`Seq${idx + 1}`);
+                node.sequenceIndex = idx;
+                node.branchLength = 0.1; // Default branch length
+                return node;
+            });
+            
+            const activeNodes = [...nodes];
+            
+            while (activeNodes.length > 1) {
+                let minDist = Infinity;
+                let minI = 0, minJ = 1;
+                
+                for (let i = 0; i < activeNodes.length; i++) {
+                    for (let j = i + 1; j < activeNodes.length; j++) {
+                        const iIndices = getLeafIndices(activeNodes[i]);
+                        const jIndices = getLeafIndices(activeNodes[j]);
+                        
+                        let avgDist = 0;
+                        for (const ii of iIndices) {
+                            for (const jj of jIndices) {
+                                avgDist += distMatrix[ii][jj];
+                            }
+                        }
+                        avgDist /= (iIndices.length * jIndices.length);
+                        
+                        if (avgDist < minDist) {
+                            minDist = avgDist;
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+                
+                // Merge closest nodes
+                const newNode = new TreeNode();
+                newNode.children = [activeNodes[minI], activeNodes[minJ]];
+                activeNodes[minI].parent = newNode;
+                activeNodes[minJ].parent = newNode;
+                
+                // Set branch lengths based on distance
+                activeNodes[minI].branchLength = minDist / 2;
+                activeNodes[minJ].branchLength = minDist / 2;
+                
+                const newActiveNodes = activeNodes.filter((_, idx) => idx !== minI && idx !== minJ);
+                newActiveNodes.push(newNode);
+                activeNodes.length = 0;
+                activeNodes.push(...newActiveNodes);
+            }
+            
+            const tree = activeNodes[0];
+            tree.branchLength = 0; // Root has no branch length
+            
+            // Calculate likelihood using Felsenstein's algorithm and reconstruct sequences
+            const seqLength = sequences[0].length;
+            
+            // Initialize sequence arrays
+            function initSequences(node) {
+                node.sequence = [];
+                if (!node.isLeaf()) {
+                    node.children.forEach(initSequences);
+                }
+            }
+            initSequences(tree);
+            
+            const logLikelihood = felsensteinsAlgorithmWithReconstruction(tree, sequences);
+            
+            return { tree, logLikelihood };
+        }
+        
+        // Global storage for likelihood visualization
+        let likelihoodData = {
+            tree: null,
+            sequences: null,
+            siteData: [],
+            currentSite: 0
+        };
+        
+        // Felsenstein's pruning algorithm for likelihood calculation with ancestral reconstruction
+        function felsensteinsAlgorithmWithReconstruction(tree, sequences) {
+            const seqLength = sequences[0].length;
+            const nucleotideIndices = { 'A': 0, 'T': 1, 'C': 2, 'G': 3 };
+            const nucleotides = ['A', 'T', 'C', 'G'];
+            let totalLogLikelihood = 0;
+            const logMessages = [];
+            
+            // Reset visualization data
+            likelihoodData = {
+                tree: tree,
+                sequences: sequences,
+                siteData: [],
+                currentSite: 0
+            };
+            
+            logMessages.push(`Calculating likelihood for ${seqLength} sites using Jukes-Cantor model\n`);
+            logMessages.push(`Tree topology: ${sequences.length} sequences\n\n`);
+            
+            // Jukes-Cantor transition probability
+            function transitionProb(state1, state2, branchLength) {
+                const t = Math.max(0.01, branchLength / sequences[0].length); // Normalize
+                if (state1 === state2) {
+                    return 0.25 + 0.75 * Math.exp(-4 * t / 3);
+                } else {
+                    return 0.25 - 0.25 * Math.exp(-4 * t / 3);
+                }
+            }
+            
+            // Calculate likelihood for each site
+            for (let site = 0; site < seqLength; site++) {
+                const siteStates = sequences.map(s => s[site]).join('');
+                if (site < 5 || site === seqLength - 1) {
+                    logMessages.push(`Site ${site + 1}: [${siteStates}]\n`);
+                } else if (site === 5) {
+                    logMessages.push(`... (sites 6-${seqLength - 1} calculated) ...\n`);
+                }
+                
+                // Post-order traversal to calculate conditional likelihoods
+                function calcLikelihood(node) {
+                    if (!node.likelihood) {
+                        node.likelihood = Array(4).fill(0);
+                    }
+                    
+                    if (node.isLeaf()) {
+                        // Leaf node: likelihood is 1 for observed state, 0 for others
+                        const observed = sequences[node.sequenceIndex][site];
+                        const obsIdx = nucleotideIndices[observed];
+                        for (let i = 0; i < 4; i++) {
+                            node.likelihood[i] = (i === obsIdx) ? 1 : 0;
+                        }
+                    } else {
+                        // Internal node: sum over possible child states
+                        for (let i = 0; i < 4; i++) {
+                            let prob = 1;
+                            for (const child of node.children) {
+                                calcLikelihood(child);
+                                let childProb = 0;
+                                for (let j = 0; j < 4; j++) {
+                                    const transProb = transitionProb(i, j, child.branchLength || 0.1);
+                                    childProb += transProb * child.likelihood[j];
+                                }
+                                prob *= childProb;
+                            }
+                            node.likelihood[i] = prob;
+                        }
+                    }
+                }
+                
+                calcLikelihood(tree);
+                
+                // Reconstruct ancestral state for this site
+                function reconstructSite(node) {
+                    if (node.isLeaf()) return;
+                    
+                    if (node.likelihood) {
+                        let maxIdx = 0;
+                        let maxProb = node.likelihood[0];
+                        for (let i = 1; i < 4; i++) {
+                            if (node.likelihood[i] > maxProb) {
+                                maxProb = node.likelihood[i];
+                                maxIdx = i;
+                            }
+                        }
+                        node.sequence[site] = nucleotides[maxIdx];
+                    }
+                    
+                    node.children.forEach(reconstructSite);
+                }
+                
+                reconstructSite(tree);
+                
+                // Sum over root states (assuming equal prior)
+                const siteLikelihood = tree.likelihood.reduce((sum, p) => sum + p * 0.25, 0);
+                const siteLogLikelihood = Math.log(Math.max(siteLikelihood, 1e-10));
+                totalLogLikelihood += siteLogLikelihood;
+                
+                // Store likelihood data for this site (deep copy node likelihoods)
+                const nodeLikelihoods = new Map();
+                function storeLikelihoods(node) {
+                    if (node.likelihood) {
+                        nodeLikelihoods.set(node, [...node.likelihood]);
+                    }
+                    if (!node.isLeaf()) {
+                        node.children.forEach(storeLikelihoods);
+                    }
+                }
+                storeLikelihoods(tree);
+                
+                likelihoodData.siteData.push({
+                    site: site,
+                    states: sequences.map(s => s[site]).join(''),
+                    nodeLikelihoods: nodeLikelihoods,
+                    siteLikelihood: siteLikelihood,
+                    siteLogLikelihood: siteLogLikelihood,
+                    cumulativeLogL: totalLogLikelihood
+                });
+                
+                if (site < 5 || site === seqLength - 1) {
+                    logMessages.push(`  Root likelihoods: [${tree.likelihood.map(p => p.toExponential(2)).join(', ')}]\n`);
+                    logMessages.push(`  Site likelihood: ${siteLikelihood.toExponential(4)}\n`);
+                    logMessages.push(`  Log likelihood: ${siteLogLikelihood.toFixed(4)}\n`);
+                    logMessages.push(`  Cumulative log L: ${totalLogLikelihood.toFixed(4)}\n\n`);
+                }
+            }
+            
+            logMessages.push(`\nTotal log likelihood: ${totalLogLikelihood.toFixed(6)}\n`);
+            logMessages.push(`Average per site: ${(totalLogLikelihood / seqLength).toFixed(6)}\n`);
+            
+            // Display log in UI
+            const logContainer = document.getElementById('likelihoodLog');
+            if (logContainer) {
+                logContainer.innerHTML = '<pre style="margin: 0;">' + logMessages.join('') + '</pre>';
+                document.getElementById('likelihoodLogContainer').style.display = 'block';
+            }
+            
+            // Setup visualization controls
+            setupLikelihoodVisualization();
+            
+            return totalLogLikelihood;
+        }
+        
+        // Convert tree to Newick format
+        function treeToNewick(node) {
+            if (node.isLeaf()) {
+                const seqText = sequences[node.sequenceIndex] ? sequences[node.sequenceIndex].join('') : '';
+                return `${node.name}[${seqText}]`;
+            }
+            const childrenNewick = node.children.map(child => treeToNewick(child)).join(',');
+            const seqText = node.sequence && node.sequence.length > 0 ? node.sequence.join('') : '';
+            const label = seqText ? `[${seqText}]` : '';
+            return `(${childrenNewick})${label}`;
+        }
+        
+        // Display tree using Phylocanvas
+        function displayTree(tree, sequences, containerId = 'phylotree1') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear previous tree
+            
+            // Convert to Newick format
+            const newick = treeToNewick(tree) + ';';
+            
+            console.log('Newick format:', newick);
+            console.log('Container:', container);
+            
+            // Use canvas fallback for reliable rendering
+            container.innerHTML = '<canvas style="width: 100%; height: 100%;"></canvas>';
+            const canvas = container.querySelector('canvas');
+            displayTreeCanvas(tree, sequences, canvas);
+        }
+        
+        // Old canvas-based display function (backup)
+        function displayTreeCanvas(tree, sequences, canvas) {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Calculate adaptive canvas size
+            const numLeaves = sequences.length;
+            const minHeight = 400;
+            const heightPerLeaf = Math.max(60, 120 / Math.sqrt(numLeaves)); // Less spacing for many sequences
+            const calculatedHeight = Math.max(minHeight, numLeaves * heightPerLeaf);
+            
+            // Set canvas size with better aspect ratio
+            canvas.width = Math.max(1000, calculatedHeight * 1.5); // Width scales with height
+            canvas.height = calculatedHeight;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Get all leaves and assign y-coordinates
+            const leaves = [];
+            function collectLeaves(node) {
+                if (node.isLeaf()) {
+                    leaves.push(node);
+                } else {
+                    node.children.forEach(child => collectLeaves(child));
+                }
+            }
+            collectLeaves(tree);
+            
+            const marginLeft = 80;
+            const marginRight = 200;
+            const marginTop = 50;
+            const marginBottom = 50;
+            const leafSpacing = (canvas.height - marginTop - marginBottom) / Math.max(1, leaves.length - 1);
+            const positions = new Map();
+            
+            // Calculate distance from root for each node
+            function calcDistanceFromRoot(node, distFromRoot = 0) {
+                node.distFromRoot = distFromRoot;
+                if (!node.isLeaf()) {
+                    node.children.forEach(child => {
+                        const branchLength = child.branchLength || 0.1;
+                        calcDistanceFromRoot(child, distFromRoot + branchLength);
+                    });
+                }
+            }
+            calcDistanceFromRoot(tree);
+            
+            // Find max distance to scale x-axis
+            let maxDist = 0;
+            function findMaxDist(node) {
+                if (node.distFromRoot > maxDist) maxDist = node.distFromRoot;
+                if (!node.isLeaf()) node.children.forEach(findMaxDist);
+            }
+            findMaxDist(tree);
+            
+            const xScale = (canvas.width - marginLeft - marginRight) / Math.max(maxDist, 0.1);
+            
+            // Assign positions using branch lengths (post-order traversal)
+            let leafIndex = 0;
+            function positionNode(node) {
+                const x = marginLeft + node.distFromRoot * xScale;
+                
+                if (node.isLeaf()) {
+                    const pos = { x: x, y: marginTop + leafIndex * leafSpacing };
+                    positions.set(node, pos);
+                    leafIndex++;
+                    return pos;
+                }
+                
+                const childPositions = node.children.map(child => positionNode(child));
+                const avgY = childPositions.reduce((sum, p) => sum + p.y, 0) / childPositions.length;
+                
+                positions.set(node, { x, y: avgY });
+                return { x, y: avgY };
+            }
+            
+            positionNode(tree);
+            
+            // Draw the tree
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#333';
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 13px Arial';
+            
+            // Draw all edges first with diagonal lines
+            function drawEdges(node) {
+                if (node.isLeaf()) return;
+                
+                const pos = positions.get(node);
+                
+                node.children.forEach(child => {
+                    const childPos = positions.get(child);
+                    
+                    // Draw diagonal branch from parent to child
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                    ctx.lineTo(childPos.x, childPos.y);
+                    ctx.stroke();
+                    
+                    drawEdges(child);
+                });
+            }
+            
+            drawEdges(tree);
+            
+            // Draw nodes and sequences
+            function drawNodes(node) {
+                const pos = positions.get(node);
+                
+                if (node.isLeaf()) {
+                    // Draw leaf label
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 13px Arial';
+                    ctx.fillText(node.name, pos.x + 15, pos.y + 5);
+                    
+                    // Draw leaf node
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 6, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#4A90E2';
+                    ctx.fill();
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                } else {
+                    // Draw internal node
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#E67E22';
+                    ctx.fill();
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Draw ancestral sequence next to the node
+                    if (node.sequence && node.sequence.length > 0) {
+                        const seqText = node.sequence.join('');
+                        ctx.font = '9px Courier New';
+                        ctx.fillStyle = '#666';
+                        ctx.fillText(seqText, pos.x + 10, pos.y - 10);
+                    }
+                    
+                    node.children.forEach(drawNodes);
+                }
+            }
+            
+            ctx.lineWidth = 2;
+            drawNodes(tree);
+            
+            // Draw scale bar
+            const scaleBarLength = 1.0; // Represents 1.0 substitutions per site
+            const scaleBarPixels = scaleBarLength * xScale;
+            const scaleBarX = marginLeft + 20;
+            const scaleBarY = canvas.height - marginBottom + 20;
+            
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(scaleBarX, scaleBarY);
+            ctx.lineTo(scaleBarX + scaleBarPixels, scaleBarY);
+            ctx.stroke();
+            
+            // Vertical ticks
+            ctx.beginPath();
+            ctx.moveTo(scaleBarX, scaleBarY - 5);
+            ctx.lineTo(scaleBarX, scaleBarY + 5);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(scaleBarX + scaleBarPixels, scaleBarY - 5);
+            ctx.lineTo(scaleBarX + scaleBarPixels, scaleBarY + 5);
+            ctx.stroke();
+            
+            // Label
+            ctx.fillStyle = '#000';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('1.0 substitutions/site', scaleBarX + scaleBarPixels / 2, scaleBarY + 20);
+            ctx.textAlign = 'left';
+            
+            // Add hover interaction
+            addCanvasHoverInteraction(canvas, tree, sequences, positions);
+        }
+        
+        // Setup likelihood visualization controls
+        function setupLikelihoodVisualization() {
+            if (!likelihoodData.siteData || likelihoodData.siteData.length === 0) return;
+            
+            const totalSites = likelihoodData.siteData.length;
+            document.getElementById('totalSites').textContent = totalSites;
+            document.getElementById('siteSlider').max = totalSites - 1;
+            
+            let autoPlayInterval = null;
+            
+            function updateVisualization(site) {
+                likelihoodData.currentSite = site;
+                document.getElementById('currentSite').textContent = site + 1;
+                document.getElementById('siteSlider').value = site;
+                
+                const siteData = likelihoodData.siteData[site];
+                document.getElementById('currentSiteLogL').textContent = siteData.siteLogLikelihood.toFixed(4);
+                
+                // Draw likelihood tree
+                drawLikelihoodTree(site);
+            }
+            
+            document.getElementById('prevSite').onclick = () => {
+                const newSite = Math.max(0, likelihoodData.currentSite - 1);
+                updateVisualization(newSite);
+            };
+            
+            document.getElementById('nextSite').onclick = () => {
+                const newSite = Math.min(totalSites - 1, likelihoodData.currentSite + 1);
+                updateVisualization(newSite);
+            };
+            
+            document.getElementById('siteSlider').oninput = (e) => {
+                updateVisualization(parseInt(e.target.value));
+            };
+            
+            document.getElementById('autoPlay').onclick = function() {
+                if (autoPlayInterval) {
+                    clearInterval(autoPlayInterval);
+                    autoPlayInterval = null;
+                    this.textContent = 'Auto Play';
+                } else {
+                    this.textContent = 'Stop';
+                    autoPlayInterval = setInterval(() => {
+                        const nextSite = (likelihoodData.currentSite + 1) % totalSites;
+                        updateVisualization(nextSite);
+                    }, 800);
+                }
+            };
+            
+            // Initial draw
+            updateVisualization(0);
+        }
+        
+        // Draw tree with likelihood values visualized
+        function drawLikelihoodTree(site) {
+            const canvas = document.getElementById('likelihoodCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const tree = likelihoodData.tree;
+            const sequences = likelihoodData.sequences;
+            const siteData = likelihoodData.siteData[site];
+            
+            // Calculate adaptive canvas size
+            const numLeaves = sequences.length;
+            const minHeight = 400;
+            const heightPerLeaf = Math.max(80, 140 / Math.sqrt(numLeaves)); // More space for pie charts
+            const calculatedHeight = Math.max(minHeight, numLeaves * heightPerLeaf);
+            
+            // Set canvas size with better aspect ratio
+            canvas.width = Math.max(1000, calculatedHeight * 1.6); // Wider for pie chart labels
+            canvas.height = calculatedHeight;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Position nodes (same as displayTreeCanvas)
+            const leaves = [];
+            function collectLeaves(node) {
+                if (node.isLeaf()) leaves.push(node);
+                else node.children.forEach(child => collectLeaves(child));
+            }
+            collectLeaves(tree);
+            
+            const marginLeft = 80;
+            const marginRight = 300;
+            const marginTop = 50;
+            const marginBottom = 50;
+            const leafSpacing = (canvas.height - marginTop - marginBottom) / Math.max(1, leaves.length - 1);
+            const positions = new Map();
+            
+            // Calculate distance from root for each node
+            function calcDistanceFromRoot(node, distFromRoot = 0) {
+                node.distFromRoot = distFromRoot;
+                if (!node.isLeaf()) {
+                    node.children.forEach(child => {
+                        const branchLength = child.branchLength || 0.1;
+                        calcDistanceFromRoot(child, distFromRoot + branchLength);
+                    });
+                }
+            }
+            calcDistanceFromRoot(tree);
+            
+            // Find max distance to scale x-axis
+            let maxDist = 0;
+            function findMaxDist(node) {
+                if (node.distFromRoot > maxDist) maxDist = node.distFromRoot;
+                if (!node.isLeaf()) node.children.forEach(findMaxDist);
+            }
+            findMaxDist(tree);
+            
+            const xScale = (canvas.width - marginLeft - marginRight) / Math.max(maxDist, 0.1);
+            
+            let leafIndex = 0;
+            function positionNode(node) {
+                const x = marginLeft + node.distFromRoot * xScale;
+                
+                if (node.isLeaf()) {
+                    const pos = { x: x, y: marginTop + leafIndex * leafSpacing };
+                    positions.set(node, pos);
+                    leafIndex++;
+                    return pos;
+                }
+                const childPositions = node.children.map(child => positionNode(child));
+                const avgY = childPositions.reduce((sum, p) => sum + p.y, 0) / childPositions.length;
+                const pos = { x, y: avgY };
+                positions.set(node, pos);
+                return pos;
+            }
+            positionNode(tree);
+            
+            // Draw edges
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#333';
+            function drawEdges(node) {
+                if (node.isLeaf()) return;
+                const pos = positions.get(node);
+                node.children.forEach(child => {
+                    const childPos = positions.get(child);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                    ctx.lineTo(childPos.x, childPos.y);
+                    ctx.stroke();
+                    drawEdges(child);
+                });
+            }
+            drawEdges(tree);
+            
+            // Draw nodes with likelihood visualization
+            const nucleotides = ['A', 'T', 'C', 'G'];
+            const colors = ['#4A90E2', '#7EC8E3', '#F5A623', '#E67E22'];
+            
+            function drawNodes(node) {
+                const pos = positions.get(node);
+                const likelihoods = siteData.nodeLikelihoods.get(node);
+                
+                if (node.isLeaf()) {
+                    // Draw leaf with observed state
+                    const observed = sequences[node.sequenceIndex][site];
+                    const obsIdx = nucleotides.indexOf(observed);
+                    
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 8, 0, 2 * Math.PI);
+                    ctx.fillStyle = colors[obsIdx];
+                    ctx.fill();
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 13px Arial';
+                    ctx.fillText(node.name + ': ' + observed, pos.x + 15, pos.y + 5);
+                } else {
+                    // Draw internal node with likelihood pie chart
+                    if (likelihoods) {
+                        const total = likelihoods.reduce((a, b) => a + b, 0);
+                        let startAngle = -Math.PI / 2;
+                        
+                        // Draw pie chart
+                        likelihoods.forEach((prob, idx) => {
+                            const sliceAngle = (prob / total) * 2 * Math.PI;
+                            ctx.beginPath();
+                            ctx.moveTo(pos.x, pos.y);
+                            ctx.arc(pos.x, pos.y, 20, startAngle, startAngle + sliceAngle);
+                            ctx.closePath();
+                            ctx.fillStyle = colors[idx];
+                            ctx.fill();
+                            startAngle += sliceAngle;
+                        });
+                        
+                        // Border
+                        ctx.beginPath();
+                        ctx.arc(pos.x, pos.y, 20, 0, 2 * Math.PI);
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        
+                        // Show likelihood values
+                        ctx.font = '9px Courier New';
+                        ctx.fillStyle = '#333';
+                        let yOffset = pos.y + 35;
+                        likelihoods.forEach((prob, idx) => {
+                            if (prob > 0.01) {
+                                ctx.fillText(`${nucleotides[idx]}: ${prob.toExponential(1)}`, pos.x + 25, yOffset);
+                                yOffset += 12;
+                            }
+                        });
+                    }
+                    
+                    node.children.forEach(drawNodes);
+                }
+            }
+            
+            drawNodes(tree);
+            
+            // Draw scale bar
+            const scaleBarLength = 0.1; // Represents 0.1 substitutions per site
+            const scaleBarPixels = scaleBarLength * xScale;
+            const scaleBarX = marginLeft + 20;
+            const scaleBarY = canvas.height - marginBottom + 20;
+            
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(scaleBarX, scaleBarY);
+            ctx.lineTo(scaleBarX + scaleBarPixels, scaleBarY);
+            ctx.stroke();
+            
+            // Vertical ticks
+            ctx.beginPath();
+            ctx.moveTo(scaleBarX, scaleBarY - 5);
+            ctx.lineTo(scaleBarX, scaleBarY + 5);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(scaleBarX + scaleBarPixels, scaleBarY - 5);
+            ctx.lineTo(scaleBarX + scaleBarPixels, scaleBarY + 5);
+            ctx.stroke();
+            
+            // Label
+            ctx.fillStyle = '#000';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('1.0 substitutions/site', scaleBarX + scaleBarPixels / 2, scaleBarY + 20);
+            ctx.textAlign = 'left';
+        }
+        // Add hover interaction to canvas
+        function addCanvasHoverInteraction(canvas, tree, sequences, positions) {
+            const tooltip = document.createElement('div');
+            tooltip.style.position = 'absolute';
+            tooltip.style.background = 'rgba(0, 0, 0, 0.9)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '10px 15px';
+            tooltip.style.borderRadius = '5px';
+            tooltip.style.pointerEvents = 'none';
+            tooltip.style.display = 'none';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.fontFamily = 'Courier New, monospace';
+            tooltip.style.fontSize = '12px';
+            tooltip.style.whiteSpace = 'pre';
+            tooltip.style.maxWidth = '600px';
+            tooltip.style.wordBreak = 'break-all';
+            document.body.appendChild(tooltip);
+            
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                
+                let hoveredNode = null;
+                
+                // Check all nodes
+                function checkNode(node) {
+                    const pos = positions.get(node);
+                    if (pos) {
+                        const radius = node.isLeaf() ? 8 : 20;
+                        const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+                        if (dist <= radius) {
+                            hoveredNode = node;
+                        }
+                    }
+                    if (!node.isLeaf()) {
+                        node.children.forEach(checkNode);
+                    }
+                }
+                checkNode(tree);
+                
+                if (hoveredNode) {
+                    let sequence;
+                    if (hoveredNode.isLeaf()) {
+                        sequence = sequences[hoveredNode.sequenceIndex].join('');
+                        tooltip.innerHTML = `<strong>${hoveredNode.name}</strong>\n${sequence}`;
+                    } else {
+                        sequence = hoveredNode.sequence ? hoveredNode.sequence.join('') : 'N/A';
+                        tooltip.innerHTML = `<strong>Internal Node</strong>\n${sequence}`;
+                    }
+                    
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.pageX + 10) + 'px';
+                    tooltip.style.top = (e.pageY + 10) + 'px';
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    tooltip.style.display = 'none';
+                    canvas.style.cursor = 'default';
+                }
+            });
+            
+            canvas.addEventListener('mouseleave', () => {
+                tooltip.style.display = 'none';
+                canvas.style.cursor = 'default';
+            });
+        }
+    </script>
+</body>
+</html>
