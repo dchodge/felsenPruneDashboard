@@ -319,6 +319,74 @@
             height: 20px;
             border: 1px solid #333;
         }
+        
+        .methodology {
+            background: #f8f8f8;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+        }
+        
+        .methodology h3 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 400;
+        }
+        
+        .methodology-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .methodology-item {
+            background: white;
+            padding: 15px;
+            border-left: 3px solid #000;
+        }
+        
+        .methodology-item strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        details {
+            margin-top: 40px;
+            background: white;
+            border: 1px solid #000;
+        }
+        
+        details summary {
+            cursor: pointer;
+            padding: 20px;
+            background: #000;
+            color: white;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 400;
+            user-select: none;
+        }
+        
+        details summary:hover {
+            background: #333;
+        }
+        
+        details[open] summary {
+            border-bottom: 1px solid #000;
+        }
+        
+        details .methodology {
+            margin: 0;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -435,6 +503,42 @@
                 <div class="stat-value" id="numTrees">-</div>
             </div>
         </div>
+        
+        <details>
+            <summary>Methodology & Assumptions</summary>
+            <div class="methodology">
+                <h3>Method: Felsenstein's Pruning Algorithm with UPGMA Tree Construction</h3>
+                <div class="methodology-content">
+                    <div class="methodology-item">
+                        <strong>Evolutionary Model</strong>
+                        Jukes-Cantor (1969): Assumes all nucleotide substitutions occur at equal rates. Transition probability: P(i→j|t) = 0.25 + 0.75e^(-4t/3) for i=j, or 0.25 - 0.25e^(-4t/3) for i≠j
+                    </div>
+                    <div class="methodology-item">
+                        <strong>Tree Construction</strong>
+                        UPGMA (Unweighted Pair Group Method with Arithmetic mean): Builds tree by iteratively joining closest sequences based on Hamming distances, assuming molecular clock
+                    </div>
+                    <div class="methodology-item">
+                        <strong>Branch Lengths</strong>
+                        Estimated from pairwise Hamming distances (proportion of differing sites). Branch lengths represent evolutionary time proportional to substitutions per site
+                    </div>
+                    <div class="methodology-item">
+                        <strong>Likelihood Calculation</strong>
+                        Felsenstein's Pruning computes conditional likelihoods at each node via post-order traversal, marginalizing over all possible ancestral states at internal nodes
+                    </div>
+                    <div class="methodology-item">
+                        <strong>Assumptions</strong>
+                        • Sites evolve independently<br>
+                        • Equal base frequencies (0.25 each)<br>
+                        • No rate variation across sites<br>
+                        • Time-reversible process
+                    </div>
+                    <div class="methodology-item">
+                        <strong>Ancestral Reconstruction</strong>
+                        Maximum likelihood states chosen at internal nodes based on highest conditional likelihood values from the pruning algorithm
+                    </div>
+                </div>
+            </div>
+        </details>
     </div>
     
     <script>
