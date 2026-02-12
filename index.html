@@ -30,6 +30,28 @@
             margin-bottom: 40px;
         }
         
+        .nav-link {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .nav-link a {
+            color: #000;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid #000;
+            display: inline-block;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+        
+        .nav-link a:hover {
+            background: #000;
+            color: white;
+        }
+        
         .container {
             background: white;
             padding: 40px;
@@ -392,6 +414,9 @@
 <body>
     <h1>Phylogenetic Tree Builder</h1>
     <p class="subtitle">Using Felsenstein's Maximum Likelihood Algorithm</p>
+    <div class="nav-link">
+        <a href="https://dchodge.github.io/molecularEvoDashboard/" target="_blank">← Molecular Evolution Visualizer</a>
+    </div>
     
     <div class="container">
         <div class="controls">
