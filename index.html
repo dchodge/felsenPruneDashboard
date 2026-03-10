@@ -662,8 +662,8 @@ TAGCTAGCTAGCTAGCTAGC
                     
                     // Check maximum sequence length
                     const maxLength = Math.max(...parsedSequences.map(s => s.length));
-                    if (maxLength > 200) {
-                        alert(`Sequences too long! Maximum 200 nucleotides allowed. Your longest sequence has ${maxLength} nucleotides.`);
+                    if (maxLength > 400) {
+                        alert(`Sequences too long! Maximum 400 nucleotides allowed. Your longest sequence has ${maxLength} nucleotides.`);
                         fastaFileInput.value = '';
                         return;
                     }
