@@ -569,6 +569,7 @@
     
     <script>
         let sequences = [];
+        let sequenceNames = [];
         const nucleotides = ['A', 'T', 'C', 'G'];
         
         const generateBtn = document.getElementById('generateBtn');
@@ -616,13 +617,17 @@ TAGCTAGCTAGCTAGCTAGC
         function parseFasta(text) {
             const lines = text.split('\n').filter(line => line.trim());
             const sequences = [];
+            const names = [];
             let currentSeq = null;
+            let currentName = null;
             
             for (const line of lines) {
                 if (line.startsWith('>')) {
                     if (currentSeq) {
                         sequences.push(currentSeq);
+                        names.push(currentName);
                     }
+                    currentName = line.slice(1).trim();
                     currentSeq = [];
                 } else {
                     const nucs = line.trim().toUpperCase().split('');
@@ -633,8 +638,9 @@ TAGCTAGCTAGCTAGCTAGC
             }
             if (currentSeq && currentSeq.length > 0) {
                 sequences.push(currentSeq);
+                names.push(currentName);
             }
-            return sequences;
+            return { sequences, names };
         }
         
         // Load FASTA file
@@ -645,7 +651,9 @@ TAGCTAGCTAGCTAGCTAGC
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const parsedSequences = parseFasta(event.target.result);
+                    const parsed = parseFasta(event.target.result);
+                    const parsedSequences = parsed.sequences;
+                    const parsedNames = parsed.names;
                     
                     if (parsedSequences.length === 0) {
                         alert('No valid sequences found in FASTA file');
@@ -679,6 +687,7 @@ TAGCTAGCTAGCTAGCTAGC
                     }
                     
                     sequences = parsedSequences;
+                    sequenceNames = parsedNames;
                     displaySequences(sequences);
                     buildTreeBtn.disabled = false;
                     
@@ -703,7 +712,7 @@ TAGCTAGCTAGCTAGCTAGC
                 
                 const label = document.createElement('div');
                 label.className = 'sequence-label';
-                label.textContent = `Sequence ${idx + 1}`;
+                label.textContent = sequenceNames[idx] || `Sequence ${idx + 1}`;
                 
                 const seqDiv = document.createElement('div');
                 seqDiv.className = 'sequence';
@@ -728,6 +737,7 @@ TAGCTAGCTAGCTAGCTAGC
             const mutationParam = parseFloat(document.getElementById('mutationParam').value);
             
             sequences = [];
+            sequenceNames = [];
             treeContainer.style.display = 'none';
             statsContainer.style.display = 'none';
             progressContainer.style.display = 'none';
@@ -752,6 +762,8 @@ TAGCTAGCTAGCTAGCTAGC
                 sequences.push(newSeq);
             }
             
+            // Set default names for generated sequences
+            sequenceNames = sequences.map((_, i) => `Seq ${i + 1}`);
             // Display sequences
             displaySequences(sequences);
             buildTreeBtn.disabled = false;
@@ -841,7 +853,7 @@ TAGCTAGCTAGCTAGCTAGC
         function buildSimpleTree(sequences) {
             const root = new TreeNode('root');
             sequences.forEach((seq, idx) => {
-                const leaf = new TreeNode(`Seq${idx + 1}`);
+                const leaf = new TreeNode(sequenceNames[idx] || `Seq${idx + 1}`);
                 leaf.parent = root;
                 root.children.push(leaf);
             });
@@ -864,7 +876,7 @@ TAGCTAGCTAGCTAGCTAGC
             
             // Build tree using UPGMA
             const nodes = sequences.map((seq, idx) => {
-                const node = new TreeNode(`Seq${idx + 1}`);
+                const node = new TreeNode(sequenceNames[idx] || `Seq${idx + 1}`);
                 node.sequenceIndex = idx;
                 return node;
             });
@@ -1030,7 +1042,7 @@ TAGCTAGCTAGCTAGCTAGC
             
             // Build tree using UPGMA
             const nodes = sequences.map((seq, idx) => {
-                const node = new TreeNode(`Seq${idx + 1}`);
+                const node = new TreeNode(sequenceNames[idx] || `Seq${idx + 1}`);
                 node.sequenceIndex = idx;
                 node.branchLength = 0.1; // Default branch length
                 return node;
